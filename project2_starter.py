@@ -148,7 +148,21 @@ def avg_location_rating_by_room_type(data) -> dict:
     # ==============================
     # YOUR CODE STARTS HERE: Max VanDoren
     # ==============================
-    pass
+    
+    roomTypeRatings = {}
+
+    for listing in data:
+        if listing[6] != 0.0:
+            if listing[5] not in roomTypeRatings:
+                roomTypeRatings[listing[5]] = [0, 0]
+            roomTypeRatings[listing[5]][0] += listing[6]
+            roomTypeRatings[listing[5]][1] += 1
+
+    for roomType, totalRatings in roomTypeRatings.items():
+        roomTypeRatings[roomType] = totalRatings[0] / totalRatings[1]
+
+    return roomTypeRatings
+
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
