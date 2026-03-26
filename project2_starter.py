@@ -39,7 +39,7 @@ def load_listing_results(html_path) -> list[tuple]:
     """
     # TODO: Implement checkout logic following the instructions
     # ==============================
-    # YOUR CODE STARTS HERE
+    # YOUR CODE STARTS HERE: Tom Huang
     # ==============================
     pass
     # ==============================
@@ -68,7 +68,7 @@ def get_listing_details(listing_id) -> dict:
     """
     # TODO: Implement checkout logic following the instructions
     # ==============================
-    # YOUR CODE STARTS HERE
+    # YOUR CODE STARTS HERE: Tom Huang
     # ==============================
     pass
     # ==============================
@@ -89,7 +89,7 @@ def create_listing_database(html_path) -> list[tuple]:
     """
     # TODO: Implement checkout logic following the instructions
     # ==============================
-    # YOUR CODE STARTS HERE
+    # YOUR CODE STARTS HERE: Tom Huang
     # ==============================
     pass
     # ==============================
@@ -112,9 +112,20 @@ def output_csv(data, filename) -> None:
     """
     # TODO: Implement checkout logic following the instructions
     # ==============================
-    # YOUR CODE STARTS HERE
+    # YOUR CODE STARTS HERE: Max VanDoren
     # ==============================
-    pass
+
+    sortedData = sorted(data, key=lambda x: x[6], reverse=True)
+
+    outFile = open(filename, 'w', encoding="utf-8-sig")
+    csvWriter = csv.writer(outFile)
+
+    csvWriter.writerow(['Listing Title', 'Listing ID', 'Policy Number', 'Host Type', 'Host Name', 'Room Type', 'Location Rating'])
+
+    for listing in sortedData:
+        csvWriter.writerow(listing)
+
+    outFile.close()
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
@@ -135,7 +146,7 @@ def avg_location_rating_by_room_type(data) -> dict:
     """
     # TODO: Implement checkout logic following the instructions
     # ==============================
-    # YOUR CODE STARTS HERE
+    # YOUR CODE STARTS HERE: Max VanDoren
     # ==============================
     pass
     # ==============================
@@ -156,7 +167,7 @@ def validate_policy_numbers(data) -> list[str]:
     """
     # TODO: Implement checkout logic following the instructions
     # ==============================
-    # YOUR CODE STARTS HERE
+    # YOUR CODE STARTS HERE: Max VanDoren
     # ==============================
     pass
     # ==============================
