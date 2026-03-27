@@ -98,7 +98,109 @@ def get_listing_details(listing_id) -> dict:
     # ==============================
     # YOUR CODE STARTS HERE: Tom Huang
     # ==============================
-    pass
+
+    # Build the file path from the listing_id (Copied the initial set up from first function)
+    html_path = f"listing_{listing_id}.html"
+    
+    with open(html_path, "r", encoding="utf-8-sig") as f:
+        content = f.read()
+
+    soup = BeautifulSoup(content, "html.parser")
+
+    '''
+    Policy Numbre
+    '''
+    policy_number = "Exempt"
+
+    for tag in soup.find_all(string=True):
+        text = tag.strip()
+        if "pending" in text.lower():
+            policy_number = "Pending"
+            break
+
+        # RegEx to match (Claude helped fixing the not enclosed RegEx)
+        if re.search(r'20\d{2}-00\d{4}STR', text) or re.search(r'STR-000\d{4}', text):
+            match = re.search(r'(20\d{2}-00\d{4}STR|STR-000\d{4})', text)
+            if match:
+                policy_number = match.group(1)
+                break
+
+    '''
+    Host Type
+    '''
+    host_type = "regular"
+
+    for tag in soup.find_all(string=True):
+        if "superhost" in tag.strip().lower():
+            host_type = "Superhost"
+            break
+
+    '''
+    Host name
+    '''
+    host_name = ""
+    for tag in soup.find_all(string=True):
+        text = tag.strip()
+
+        # Host name typically appears after Hosted by
+        if "hosted by" in text.lower():
+            
+            # Sometimes the name is in the same string, sometimes in the next sibling
+            name = re.sub(r'(?i)hosted by\s*', '', text).strip()
+            if name:
+                host_name = name
+            else:
+
+                # Try the next sibling tag's text
+                parent = tag.parent
+                if parent and parent.next_sibling:
+                    host_name = parent.next_sibling.get_text(strip=True)
+        break
+
+    '''
+    Room Type
+    '''
+    # Based on listing subtitle: Private -> Private Room, Shared -> Shared Room, else Entire Room
+    room_type = "Entire Room"
+    for tag in soup.find_all(string=True):
+        text = tag.strip().lower()
+        if "private" in text:
+            room_type = "Private Room"
+            break
+        if "shared" in text:
+            room_type = "Shared Room"
+            break
+
+    # Location Rating (Fixed it so it can contain float numbers)
+    location_rating = 0.0
+    for tag in soup.find_all(string=True):
+        text = tag.strip().lower()
+        if "location" in text:
+
+            # Look for a float number near this tag
+            parent = tag.parent
+            if parent:
+                siblings = parent.find_next_siblings()
+                for sib in siblings:
+                    sib_text = sib.get_text(strip=True)
+                    match = re.search(r'\d\.\d', sib_text)
+                    if match:
+                        location_rating = float(match.group())
+                        break
+            break
+
+    # Return the collection from instruction (I spaved it out so I)
+    return {
+            listing_id: 
+                {
+                "policy_number": policy_number,
+                "host_type": host_type,
+                "host_name": host_name,
+                "room_type": room_type,
+                "location_rating": location_rating
+                }
+            }
+
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
