@@ -26,7 +26,6 @@ If you are getting "encoding errors" while trying to open, read, or write from a
     encoding="utf-8-sig"
 """
 
-
 def load_listing_results(html_path) -> list[tuple]:
     """
     Load file data from html_path and parse through it to find listing titles and listing ids.
@@ -42,48 +41,39 @@ def load_listing_results(html_path) -> list[tuple]:
     # YOUR CODE STARTS HERE: Tom Huang
     # ==============================
     
-    # Open HTML from path (Asked Claude for the encoding arg)
+    # Open HTML from path (Added encoding just in case said above)
     with open(html_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # Parse through (from Runestone)
-    soup = BeautifulSoup(html_path, "html.parser")
+    # Parse through (from Runestone) (bug fix to read from the content in first iteration, not the html path)
+    soup = BeautifulSoup(content, "html.parser")
 
-    # Empty list
+    # Empty listing
     listings = []
     
-    # Header and ID
-    h1 = soup.find("h1")
-    og_url = soup.find("meta", property = "og:url")
+    # Find all the listing cards containing titles and links (rewrote format from first wrong iteration)
+    for tag in soup.find_all("a", href=True):
+        href = tag.get("href", "")
 
-    # Extract header 1 and listing id if elements are present (Asked Claude for corrected syntax of listing_id)
-    if h1 and og_url:
-        title = h1.get_text(strip = True)
-        listing_id = og_url["content"].split("/rooms/")[-1]
-        listings.append((title,listing_id))
+        # Extract the listing ID from the URL (the number after /rooms/)
+        if "/rooms/" in href:
+            parts = href.split("/rooms/")
 
-    # Getting the result from each card that has a wishlist button with the title and room linked ot the ID
-    else:
-        for btn in soup.find_all(attrs={"aria-label":True}):
-            label = btn["aria-label"]
-            if not label.startswith("Add to wishlist:"):
-                continue
-            title = label.replace("Add to wishlist:" "").strip()
+            # Check and strip to match (Claude helped to correct the syntax for listing id below from first iteration)
+            if len(parts) > 1:
+                listing_id = parts[1].split("?")[0].strip() 
 
-            # Find the nearest room link (? Not sure if this is right, added because the previous iteration did not run correctly)
-            for parent in btn.parents:
-                link = parent.find("a", href=re.compile(r"/rooms/"))
-                if link:
-                    listing_id = link["href"].split("/rooms/")[-1].split("?")[0]
+                # Get the title from the tag's text content
+                title = tag.get_text(" ", strip=True)
+                
+                if listing_id.isdigit() and title:
                     listings.append((title, listing_id))
-                    break
 
     return listings
 
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
-
 
 def get_listing_details(listing_id) -> dict:
     """
