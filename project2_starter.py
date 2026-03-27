@@ -1,7 +1,7 @@
 # SI 201 HW4 (Library Checkout System)
-# Your name:
-# Your student id:
-# Your email:
+# Your name: Haoxiang Huang
+# Your student id: 6885 7185
+# Your email: tomhuang@umich.edu
 # Who or what you worked with on this homework (including generative AI like ChatGPT):
 # If you worked with generative AI also add a statement for how you used it.
 # e.g.:
@@ -41,7 +41,45 @@ def load_listing_results(html_path) -> list[tuple]:
     # ==============================
     # YOUR CODE STARTS HERE: Tom Huang
     # ==============================
-    pass
+    
+    # Open HTML from path (Asked Claude for the encoding arg)
+    with open(html_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Parse through (from Runestone)
+    soup = BeautifulSoup(html_path, "html.parser")
+
+    # Empty list
+    listings = []
+    
+    # Header and ID
+    h1 = soup.find("h1")
+    og_url = soup.find("meta", property = "og:url")
+
+    # Extract header 1 and listing id if elements are present (Asked Claude for corrected syntax of listing_id)
+    if h1 and og_url:
+        title = h1.get_text(strip = True)
+        listing_id = og_url["content"].split("/rooms/")[-1]
+        listings.append((title,listing_id))
+
+    # Getting the result from each card that has a wishlist button with the title and room linked ot the ID
+    else:
+        for btn in soup.find_all(attrs={"aria-label":True}):
+            label = btn["aria-label"]
+            if not label.startswith("Add to wishlist:"):
+                continue
+            title = label.replace("Add to wishlist:" "").strip()
+
+            # Find the nearest room link (? Not sure if this is right, added because the previous iteration did not run correctly)
+            for parent in btn.parents:
+                link = parent.find("a", href=re.compile(r"/rooms/"))
+                if link:
+                    listing_id = link["href"].split("/rooms/")[-1].split("?")[0]
+                    listings.append((title, listing_id))
+                    break
+
+    return listings
+
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
