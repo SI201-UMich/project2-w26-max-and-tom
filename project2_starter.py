@@ -183,7 +183,20 @@ def validate_policy_numbers(data) -> list[str]:
     # ==============================
     # YOUR CODE STARTS HERE: Max VanDoren
     # ==============================
-    pass
+    invalidPolicies = []
+
+
+    for listing in data:
+        if listing[2] == 'Pending' or listing[2] == 'Exempt':
+            continue
+        else:
+            if re.search(r'^20\d{2}-00\d{4}STR$', listing[2]) or re.search(r'^STR-000\d{4}$', listing[2]):
+                continue
+            else:
+                invalidPolicies.append(listing[1])
+
+    return invalidPolicies
+
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
@@ -203,7 +216,17 @@ def google_scholar_searcher(query):
     # ==============================
     # YOUR CODE STARTS HERE
     # ==============================
-    pass
+    titleList = []
+
+    r = requests.get('https://scholar.google.com/scholar?hl=en&as_sdt=0%2C23&q=airbnb&btnG=')
+    bs = BeautifulSoup(r.content, 'html.parser')
+
+    tagList = bs.findall('h3', class_="gs_rt")
+
+    for tag in tagList:
+        titleList.append(tag.text.strip())
+
+    return titleList
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
