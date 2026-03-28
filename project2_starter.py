@@ -100,7 +100,7 @@ def get_listing_details(listing_id) -> dict:
     # ==============================
 
     # Build the file path from the listing_id (Copied the initial set up from first function)
-    html_path = f"listing_{listing_id}.html"
+    html_path = os.path.join(os.path.dirname(__file__), "html_files", f"listing_{listing_id}.html")
     
     with open(html_path, "r", encoding="utf-8-sig") as f:
         content = f.read()
