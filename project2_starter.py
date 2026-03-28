@@ -171,7 +171,9 @@ def get_listing_details(listing_id) -> dict:
             room_type = "Shared Room"
             break
 
-    # Location Rating (Fixed it so it can contain float numbers)
+    ''' 
+    Location Rating (Fixed it so it can contain float numbers)
+    '''
     location_rating = 0.0
     for tag in soup.find_all(string=True):
         text = tag.strip().lower()
@@ -189,7 +191,7 @@ def get_listing_details(listing_id) -> dict:
                         break
             break
 
-    # Return the collection from instruction (I spaved it out so I)
+    # Return the collection from instruction
     return {
             listing_id: 
                 {
@@ -221,7 +223,30 @@ def create_listing_database(html_path) -> list[tuple]:
     # ==============================
     # YOUR CODE STARTS HERE: Tom Huang
     # ==============================
-    pass
+
+    # Empty list
+    listing_database = []
+    
+    # Load oad Title and ID  from the search results function before
+    basic_listings = load_listing_results(html_path)
+
+    # For loop in list id to get details 
+    for title, listing_id in basic_listings:
+        details_dict = get_listing_details(listing_id)
+        details = details_dict.get(listing_id, {})  # inner dict
+
+        policy_number = details.get("policy_number", "Pending")
+        host_type = details.get("host_type", "regular")
+        host_name = details.get("host_name", "")
+        room_type = details.get("room_type", "")
+        location_rating = details.get("location_rating", 0.0)
+
+        listing_database.append(
+            (title, listing_id, policy_number, host_type, host_name, room_type, location_rating)
+        )
+
+    return listing_database
+
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
