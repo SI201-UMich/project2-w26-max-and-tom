@@ -1,7 +1,7 @@
 # SI 201 HW4 (Library Checkout System)
-# Your name:
-# Your student id:
-# Your email:
+# Your name: Haoxiang Huang, Max VanDoren
+# Your student id: 6885 7185, 6756 6409
+# Your email: tomhuang@umich.edu, maxvand@umich
 # Who or what you worked with on this homework (including generative AI like ChatGPT):
 # If you worked with generative AI also add a statement for how you used it.
 # e.g.:
@@ -26,7 +26,6 @@ If you are getting "encoding errors" while trying to open, read, or write from a
     encoding="utf-8-sig"
 """
 
-
 def load_listing_results(html_path) -> list[tuple]:
     """
     Load file data from html_path and parse through it to find listing titles and listing ids.
@@ -41,11 +40,40 @@ def load_listing_results(html_path) -> list[tuple]:
     # ==============================
     # YOUR CODE STARTS HERE: Tom Huang
     # ==============================
-    pass
+    
+    # Open HTML from path (Added encoding just in case said above)
+    with open(html_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Parse through (from Runestone) (bug fix to read from the content in first iteration, not the html path)
+    soup = BeautifulSoup(content, "html.parser")
+
+    # Empty listing
+    listings = []
+    
+    # Find all the listing cards containing titles and links (rewrote format from first wrong iteration)
+    for tag in soup.find_all("a", href=True):
+        href = tag.get("href", "")
+
+        # Extract the listing ID from the URL (the number after /rooms/)
+        if "/rooms/" in href:
+            parts = href.split("/rooms/")
+
+            # Check and strip to match (Claude helped to correct the syntax for listing id below from first iteration)
+            if len(parts) > 1:
+                listing_id = parts[1].split("?")[0].strip() 
+
+                # Get the title from the tag's text content
+                title = tag.get_text(" ", strip=True)
+                
+                if listing_id.isdigit() and title:
+                    listings.append((title, listing_id))
+
+    return listings
+
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
-
 
 def get_listing_details(listing_id) -> dict:
     """
@@ -70,7 +98,109 @@ def get_listing_details(listing_id) -> dict:
     # ==============================
     # YOUR CODE STARTS HERE: Tom Huang
     # ==============================
-    pass
+
+    # Build the file path from the listing_id (Copied the initial set up from first function)
+    html_path = f"listing_{listing_id}.html"
+    
+    with open(html_path, "r", encoding="utf-8-sig") as f:
+        content = f.read()
+
+    soup = BeautifulSoup(content, "html.parser")
+
+    '''
+    Policy Numbre
+    '''
+    policy_number = "Exempt"
+
+    for tag in soup.find_all(string=True):
+        text = tag.strip()
+        if "pending" in text.lower():
+            policy_number = "Pending"
+            break
+
+        # RegEx to match (Claude helped fixing the not enclosed RegEx)
+        if re.search(r'20\d{2}-00\d{4}STR', text) or re.search(r'STR-000\d{4}', text):
+            match = re.search(r'(20\d{2}-00\d{4}STR|STR-000\d{4})', text)
+            if match:
+                policy_number = match.group(1)
+                break
+
+    '''
+    Host Type
+    '''
+    host_type = "regular"
+
+    for tag in soup.find_all(string=True):
+        if "superhost" in tag.strip().lower():
+            host_type = "Superhost"
+            break
+
+    '''
+    Host name
+    '''
+    host_name = ""
+    for tag in soup.find_all(string=True):
+        text = tag.strip()
+
+        # Host name typically appears after Hosted by
+        if "hosted by" in text.lower():
+            
+            # Sometimes the name is in the same string, sometimes in the next sibling
+            name = re.sub(r'(?i)hosted by\s*', '', text).strip()
+            if name:
+                host_name = name
+            else:
+
+                # Try the next sibling tag's text
+                parent = tag.parent
+                if parent and parent.next_sibling:
+                    host_name = parent.next_sibling.get_text(strip=True)
+        break
+
+    '''
+    Room Type
+    '''
+    # Based on listing subtitle: Private -> Private Room, Shared -> Shared Room, else Entire Room
+    room_type = "Entire Room"
+    for tag in soup.find_all(string=True):
+        text = tag.strip().lower()
+        if "private" in text:
+            room_type = "Private Room"
+            break
+        if "shared" in text:
+            room_type = "Shared Room"
+            break
+
+    # Location Rating (Fixed it so it can contain float numbers)
+    location_rating = 0.0
+    for tag in soup.find_all(string=True):
+        text = tag.strip().lower()
+        if "location" in text:
+
+            # Look for a float number near this tag
+            parent = tag.parent
+            if parent:
+                siblings = parent.find_next_siblings()
+                for sib in siblings:
+                    sib_text = sib.get_text(strip=True)
+                    match = re.search(r'\d\.\d', sib_text)
+                    if match:
+                        location_rating = float(match.group())
+                        break
+            break
+
+    # Return the collection from instruction (I spaved it out so I)
+    return {
+            listing_id: 
+                {
+                "policy_number": policy_number,
+                "host_type": host_type,
+                "host_name": host_name,
+                "room_type": room_type,
+                "location_rating": location_rating
+                }
+            }
+
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
@@ -91,7 +221,30 @@ def create_listing_database(html_path) -> list[tuple]:
     # ==============================
     # YOUR CODE STARTS HERE: Tom Huang
     # ==============================
-    pass
+
+    # Empty list
+    results = []
+
+    # Load pairing from html_path
+    basic_listings = load_listing_results(html_path)
+
+    # For each listing id, scrape details from saved html info (Claude helped figure out the inner dict)
+    for title, listing_id in basic_listings:
+        details_dict = get_listing_details(listing_id)
+        details = details_dict.get(listing_id, {})
+
+        policy_number = details.get("policy_number", "Pending")
+        host_type = details.get("host_type", "regular")
+        host_name = details.get("host_name", "")
+        room_type = details.get("room_type", "")
+        location_rating = details.get("location_rating", 0.0)
+
+        results.append(
+            (title, listing_id, policy_number, host_type, host_name, room_type, location_rating)
+        )
+
+    return results
+
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
