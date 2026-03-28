@@ -395,26 +395,46 @@ class TestCases(unittest.TestCase):
 
     def test_load_listing_results(self):
         # TODO: Check that the number of listings extracted is 18.
+        self.assertEqual(len(self.listings), 18)
         # TODO: Check that the FIRST (title, id) tuple is  ("Loft in Mission District", "1944564").
-        pass
+        self.assertEqual(self.listings[0], ("Loft in Mission District", "1944564"))
 
     def test_get_listing_details(self):
         html_list = ["467507", "1550913", "1944564", "4614763", "6092596"]
 
         # TODO: Call get_listing_details() on each listing id above and save results in a list.
+        details_list = [get_listing_details(listing_id) for listing_id in html_list]
+
+        # NEEDS CHECKING | put nested dicts as one dict keyed by listing_id, easier to use
+        merged = {}
+        for d in details_list:
+            merged.update(d)
 
         # TODO: Spot-check a few known values by opening the corresponding listing_<id>.html files.
+        
         # 1) Check that listing 467507 has the correct policy number "STR-0005349".
+        self.assertEqual(merged["467507"]["policy_number"], "STR-0005349")
+
         # 2) Check that listing 1944564 has the correct host type "Superhost" and room type "Entire Room".
+        self.assertEqual(merged["1944564"]["host_type"], "Superhost")
+        self.assertEqual(merged["1944564"]["room_type"], "Entire Room")
+
         # 3) Check that listing 1944564 has the correct location rating 4.9.
-        pass
+        self.assertAlmostEqual(merged["1944564"]["location_rating"], 4.9, places=1)
 
     def test_create_listing_database(self):
         # TODO: Check that each tuple in detailed_data has exactly 7 elements:
         # (listing_title, listing_id, policy_number, host_type, host_name, room_type, location_rating)
+        # Changed iterative variable from tuple to tup, prevent running into errors
+        
+        for tup in self.detailed_data:
+            self.assertEqual(len(tup), 7)
 
         # TODO: Spot-check the LAST tuple is ("Guest suite in Mission District", "467507", "STR-0005349", "Superhost", "Jennifer", "Entire Room", 4.8).
-        pass
+        self.assertEqual(
+            self.detailed_data[-1],
+            ("Guest suite in Mission District", "467507", "STR-0005349", "Superhost", "Jennifer", "Entire Room", 4.8)
+        )
 
     def test_output_csv(self):
         out_path = os.path.join(self.base_dir, "test.csv")
