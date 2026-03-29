@@ -38,8 +38,10 @@ def load_listing_results(html_path) -> list[tuple]:
     """
     # TODO: Implement checkout logic following the instructions
     # ==============================
-    # YOUR CODE STARTS HERE: Tom Huang
+    # YOUR CODE STARTS HERE: Max VanDoren
     # ==============================
+    if not os.path.isabs(html_path):
+        html_path = os.path.join(os.path.dirname(__file__), html_path)
     
     # Open HTML from path (Added encoding just in case said above)
     with open(html_path, "r", encoding="utf-8") as f:
@@ -52,22 +54,24 @@ def load_listing_results(html_path) -> list[tuple]:
     listings = []
     
     # Find all the listing cards containing titles and links (rewrote format from first wrong iteration)
-    for tag in soup.find_all("a", href=True):
-        href = tag.get("href", "")
+    tags = soup.find_all('div', 't1jojoys')
 
-        # Extract the listing ID from the URL (the number after /rooms/)
-        if "/rooms/" in href:
-            parts = href.split("/rooms/")
+    for tag in tags:
+        title = tag.get_text(strip=True)
+
+        id = tag.get('id', '')
+        match = re.search(r"title_(\d+)", id)
+
+        if not match:
+            continue
+
+        listing_id = match.group(1)
+        listings.append((title, listing_id))
+
+
 
             # Check and strip to match (Claude helped to correct the syntax for listing id below from first iteration)
-            if len(parts) > 1:
-                listing_id = parts[1].split("?")[0].strip() 
-
-                # Get the title from the tag's text content
-                title = tag.get_text("_fecoyn4", strip=True)
-                
-                if listing_id.isdigit() and title:
-                    listings.append((title, listing_id))
+            
 
     return listings
 
