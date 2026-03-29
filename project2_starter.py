@@ -64,7 +64,7 @@ def load_listing_results(html_path) -> list[tuple]:
                 listing_id = parts[1].split("?")[0].strip() 
 
                 # Get the title from the tag's text content
-                title = tag.get_text(" ", strip=True)
+                title = tag.get_text("_fecoyn4", strip=True)
                 
                 if listing_id.isdigit() and title:
                     listings.append((title, listing_id))
