@@ -38,7 +38,7 @@ def load_listing_results(html_path) -> list[tuple]:
     """
     # TODO: Implement checkout logic following the instructions
     # ==============================
-    # YOUR CODE STARTS HERE: Tom Huang (Soecifically for Tom's Windows OS)
+    # YOUR CODE STARTS HERE: Tom Huang
     # ==============================
     if not os.path.isabs(html_path):
         html_path = os.path.join(os.path.dirname(__file__), html_path)
