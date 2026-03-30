@@ -38,7 +38,7 @@ def load_listing_results(html_path) -> list[tuple]:
     """
     # TODO: Implement checkout logic following the instructions
     # ==============================
-    # YOUR CODE STARTS HERE: Max VanDoren
+    # YOUR CODE STARTS HERE: Tom Huang (Soecifically for Tom's Windows OS)
     # ==============================
     if not os.path.isabs(html_path):
         html_path = os.path.join(os.path.dirname(__file__), html_path)
@@ -53,27 +53,29 @@ def load_listing_results(html_path) -> list[tuple]:
     # Empty listing
     listings = []
     
-    # Find all the listing cards containing titles and links (rewrote format from first wrong iteration)
-    tags = soup.find_all('div', 't1jojoys')
+    # Find all the listing cards containing informations from the div class (rewrote format from wrong iteration before)
+    listing_cards = soup.find_all("div", class_="c4mnd7m dir dir-ltr")
 
-    for tag in tags:
-        title = tag.get_text(strip=True)
 
-        id = tag.get('id', '')
-        match = re.search(r"title_(\d+)", id)
+    for card in listing_cards:
 
-        if not match:
-            continue
+        # The div holds listing title and id
+        title_tag = card.find("div", class_="t1jojoys dir dir-ltr")
 
+        # Text of the title tag
+        title = title_tag.get_text(strip=True)
+
+        # Pull id from the tag as well
+        tag_id = title_tag["id"]
+
+        # Get the title after the number
+        match = re.search(r"title_(\d+)", tag_id)
         listing_id = match.group(1)
-        listings.append((title, listing_id))
 
-
-
-            # Check and strip to match (Claude helped to correct the syntax for listing id below from first iteration)
-            
+        listings.append((title,listing_id))
 
     return listings
+
 
     # ==============================
     # YOUR CODE ENDS HERE
@@ -112,22 +114,23 @@ def get_listing_details(listing_id) -> dict:
     soup = BeautifulSoup(content, "html.parser")
 
     '''
-    Policy Numbre
+    Policy Number (Claude found mistake with wrong parsing with STR numbers)
     '''
     policy_number = "Exempt"
 
-    for tag in soup.find_all(string=True):
-        text = tag.strip()
-        if "pending" in text.lower():
-            policy_number = "Pending"
-            break
-
-        # RegEx to match (Claude helped fixing the not enclosed RegEx)
-        if re.search(r'20\d{2}-00\d{4}STR', text) or re.search(r'STR-000\d{4}', text):
-            match = re.search(r'(20\d{2}-00\d{4}STR|STR-000\d{4})', text)
-            if match:
-                policy_number = match.group(1)
+    for tag in soup.find_all(string=re.compile(r"Policy number", re.I)):
+        parent = tag.parent
+        span = parent.find("span") if parent else None
+        if span:
+            value = span.get_text(strip=True).replace("\ufeff", "").strip()
+            if not value:
                 break
+            if re.search(r"(?i)\bpending\b", value):
+                policy_number = "Pending"
+            else:
+                match = re.search(r"(20\d{2}-00\d{4}STR|STR-000\d{4})", value)
+                policy_number = match.group(1) if match else value
+        break
 
     '''
     Host Type
@@ -140,60 +143,40 @@ def get_listing_details(listing_id) -> dict:
             break
 
     '''
-    Host name
+    Host name and room type (merged together)
     '''
     host_name = ""
-    for tag in soup.find_all(string=True):
-        text = tag.strip()
+    room_type = "Entire Room"
+    for h2 in soup.find_all("h2"):
+        text = h2.get_text(strip=True)
 
-        # Host name typically appears after Hosted by
         if "hosted by" in text.lower():
-            
-            # Sometimes the name is in the same string, sometimes in the next sibling
-            name = re.sub(r'(?i)hosted by\s*', '', text).strip()
+
+            # Extract name after "hosted by", replace non-breaking space with regular space
+            name = re.sub(r"(?i).*hosted by\s*", "", text).replace("\xa0", " ").strip()
             if name:
                 host_name = name
-            else:
-
-                # Try the next sibling tag's text
-                parent = tag.parent
-                if parent and parent.next_sibling:
-                    host_name = parent.next_sibling.get_text(strip=True)
-        break
-
-    '''
-    Room Type
-    '''
-    # Based on listing subtitle: Private -> Private Room, Shared -> Shared Room, else Entire Room
-    room_type = "Entire Room"
-    for tag in soup.find_all(string=True):
-        text = tag.strip().lower()
-        if "private" in text:
-            room_type = "Private Room"
-            break
-        if "shared" in text:
-            room_type = "Shared Room"
-            break
+            lower = text.lower()
+            if "private" in lower:
+                room_type = "Private Room"
+            elif "shared" in lower:
+                room_type = "Shared Room"
+            break 
 
     # Location Rating (Fixed it so it can contain float numbers)
     location_rating = 0.0
-    for tag in soup.find_all(string=True):
-        text = tag.strip().lower()
-        if "location" in text:
+    for tag in soup.find_all(string=re.compile(r"(?i)^location$")):
+        parent = tag.parent
+        if parent:
+            for sib in parent.find_next_siblings():
+                match = re.search(r"\d\.\d", sib.get_text(strip=True))
+                if match:
+                    location_rating = float(match.group())
+                    break
+        if location_rating != 0.0:
+            break 
 
-            # Look for a float number near this tag
-            parent = tag.parent
-            if parent:
-                siblings = parent.find_next_siblings()
-                for sib in siblings:
-                    sib_text = sib.get_text(strip=True)
-                    match = re.search(r'\d\.\d', sib_text)
-                    if match:
-                        location_rating = float(match.group())
-                        break
-            break
-
-    # Return the collection from instruction (I spaved it out so I)
+    # Return the collection from instruction
     return {
             listing_id: 
                 {
@@ -274,7 +257,11 @@ def output_csv(data, filename) -> None:
 
     sortedData = sorted(data, key=lambda x: x[6], reverse=True)
 
-    outFile = open(filename, 'w', encoding="utf-8-sig")
+    '''
+    This is pushed specifically for Tom's branch, because without the new line, it will cause blank rows between data rows on the csv output on Windows
+    '''
+
+    outFile = open(filename, 'w', encoding="utf-8-sig", newline='')
     csvWriter = csv.writer(outFile)
 
     csvWriter.writerow(['Listing Title', 'Listing ID', 'Policy Number', 'Host Type', 'Host Name', 'Room Type', 'Location Rating'])
