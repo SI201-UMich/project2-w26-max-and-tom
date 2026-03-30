@@ -38,7 +38,7 @@ def load_listing_results(html_path) -> list[tuple]:
     """
     # TODO: Implement checkout logic following the instructions
     # ==============================
-    # YOUR CODE STARTS HERE: Max VanDoren
+    # YOUR CODE STARTS HERE: Tom Huang (Soecifically for Tom's Windows OS)
     # ==============================
     if not os.path.isabs(html_path):
         html_path = os.path.join(os.path.dirname(__file__), html_path)
@@ -53,27 +53,29 @@ def load_listing_results(html_path) -> list[tuple]:
     # Empty listing
     listings = []
     
-    # Find all the listing cards containing titles and links (rewrote format from first wrong iteration)
-    tags = soup.find_all('div', 't1jojoys')
+    # Find all the listing cards containing informations from the div class (rewrote format from wrong iteration before)
+    listing_cards = soup.find_all("div", class_="c4mnd7m dir dir-ltr")
 
-    for tag in tags:
-        title = tag.get_text(strip=True)
 
-        id = tag.get('id', '')
-        match = re.search(r"title_(\d+)", id)
+    for card in listing_cards:
 
-        if not match:
-            continue
+        # The div holds listing title and id
+        title_tag = card.find("div", class_="t1jojoys dir dir-ltr")
 
+        # Text of the title tag
+        title = title_tag.get_text(strip=True)
+
+        # Pull id from the tag as well
+        tag_id = title_tag["id"]
+
+        # Get the title after the number
+        match = re.search(r"title_(d+)", tag_id)
         listing_id = match.group(1)
-        listings.append((title, listing_id))
 
-
-
-            # Check and strip to match (Claude helped to correct the syntax for listing id below from first iteration)
-            
+        listings.append((title,listing_id))
 
     return listings
+
 
     # ==============================
     # YOUR CODE ENDS HERE
@@ -112,7 +114,7 @@ def get_listing_details(listing_id) -> dict:
     soup = BeautifulSoup(content, "html.parser")
 
     '''
-    Policy Numbre
+    Policy Number
     '''
     policy_number = "Exempt"
 
